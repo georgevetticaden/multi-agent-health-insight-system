@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "health-mcp"
+version = "0.1.0"
+description = "MCP tools for Health Intelligence System"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "snowflake-connector-python>=3.0.0",
+    "cryptography>=42.0.0",
+    "python-dateutil>=2.8.0",
+    "requests>=2.31.0",
+    "PyJWT>=2.8.0"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]

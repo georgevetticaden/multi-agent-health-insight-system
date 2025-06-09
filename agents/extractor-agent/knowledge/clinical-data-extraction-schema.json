@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "header_fields": {
+      "properties": {
+        "Patient_Name": {
+          "$comment": "Patient's full name as it appears across documents.",
+          "description": "Full name of the patient.",
+          "examples": ["GEORGE VETTICADEN"],
+          "type": "string"
+        },
+        "Date_Of_Birth": {
+          "$comment": "Date of birth is crucial for patient identification.",
+          "description": "Patient's date of birth.",
+          "examples": ["1980-03-26"],
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "Report_Date": {
+          "$comment": "The date the health record was generated.",
+          "description": "Date the health report was generated.",
+          "examples": ["2025-05-16"],
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "Patient_Age": {
+          "$comment": "Age calculated from date of birth to report date.",
+          "description": "Patient's age at the time of the report.",
+          "examples": [45],
+          "type": "integer"
+        }
+      },
+      "required": ["Patient_Name", "Date_Of_Birth", "Report_Date", "Patient_Age"],
+      "type": "object"
+    },
+    "Provider_Information": {
+      "description": "Information about healthcare providers.",
+      "items": {
+        "properties": {
+          "Provider_Name": {
+            "$comment": "Provider names must be exact as they appear in documents.",
+            "description": "Name of the healthcare provider.",
+            "examples": ["Duly Health and Care", "Northwestern Medicine", "Edward-Elmhurst Health"],
+            "type": "string"
+          },
+          "Provider_Type": {
+            "$comment": "Type categorizes the provider's specialty or role.",
+            "description": "Type or specialty of the provider.",
+            "examples": ["Primary Care", "Specialist", "Hospital"],
+            "type": "string"
+          },
+          "Provider_ID": {
+            "$comment": "Optional identifier for the provider.",
+            "description": "Unique identifier for the provider if available.",
+            "type": "string"
+          }
+        },
+        "required": ["Provider_Name"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "Allergies": {
+      "description": "Patient allergy information.",
+      "items": {
+        "properties": {
+          "Allergy": {
+            "$comment": "Allergy information is crucial for medication safety.",
+            "description": "Description of the allergy.",
+            "examples": ["No Known Allergies", "Penicillin"],
+            "type": "string"
+          },
+          "Record_Date": {
+            "$comment": "Record date helps track when allergies were documented.",
+            "description": "Date when the allergy was recorded.",
+            "examples": ["2025-04-09"],
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "type": "string"
+          },
+          "Provider": {
+            "$comment": "Provider who documented the allergy.",
+            "description": "Healthcare provider who recorded the allergy.",
+            "examples": ["Duly Health and Care"],
+            "type": "string"
+          }
+        },
+        "required": ["Allergy", "Record_Date", "Provider"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "Conditions": {
+      "description": "Medical conditions and diagnoses.",
+      "items": {
+        "properties": {
+          "Diagnosis_Date": {
+            "$comment": "Diagnosis dates enable chronological analysis.",
+            "description": "Date when the condition was diagnosed.",
+            "examples": ["2023-09-28"],
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "type": "string"
+          },
+          "Provider": {
+            "$comment": "Provider information helps track diagnosis sources.",
+            "description": "Healthcare provider who made the diagnosis.",
+            "examples": ["Duly Health and Care"],
+            "type": "string"
+          },
+          "Condition_Name": {
+            "$comment": "Condition names must be standardized for analysis.",
+            "description": "Name or description of the medical condition.",
+            "examples": ["Generalized anxiety disorder", "Attention deficit hyperactivity disorder", "Rheumatoid arthritis"],
+            "type": "string"
+          },
+          "Status": {
+            "$comment": "Status indicates if condition is active or resolved.",
+            "description": "Current status of the condition.",
+            "examples": ["Active", "Resolved", "Chronic"],
+            "type": "string"
+          },
+          "Related_Symptoms": {
+            "$comment": "Symptoms help characterize the condition presentation.",
+            "description": "Symptoms associated with the condition.",
+            "type": "string"
+          }
+        },
+        "required": ["Diagnosis_Date", "Provider", "Condition_Name"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "Immunizations": {
+      "description": "Vaccination history.",
+      "items": {
+        "properties": {
+          "Immunization_Date": {
+            "$comment": "Immunization dates track vaccination history.",
+            "description": "Date when the immunization was administered.",
+            "examples": ["2022-10-22"],
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "type": "string"
+          },
+          "Provider": {
+            "$comment": "Provider information tracks vaccination sources.",
+            "description": "Healthcare provider who administered the vaccine.",
+            "examples": ["Duly Health and Care"],
+            "type": "string"
+          },
+          "Vaccine_Name": {
+            "$comment": "Vaccine names must be standardized for analysis.",
+            "description": "Name of the vaccine.",
+            "examples": ["influenza, injectable, quadrivalent", "Pfizer-BioNTech COVID-19 Vaccine"],
+            "type": "string"
+          },
+          "Vaccine_Type": {
+            "$comment": "Type categorizes the vaccine's method or purpose.",
+            "description": "Type or category of the vaccine.",
+            "examples": ["Influenza", "COVID-19", "Tdap"],
+            "type": "string"
+          }
+        },
+        "required": ["Immunization_Date", "Provider", "Vaccine_Name"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "Procedures": {
+      "description": "Medical procedures performed.",
+      "items": {
+        "properties": {
+          "Procedure_Date": {
+            "$comment": "Procedure dates enable chronological analysis.",
+            "description": "Date when the procedure was performed.",
+            "examples": ["2020-11-24"],
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "type": "string"
+          },
+          "Provider": {
+            "$comment": "Provider information helps track procedure sources.",
+            "description": "Healthcare provider who performed the procedure.",
+            "examples": ["Duly Health and Care"],
+            "type": "string"
+          },
+          "Procedure_Name": {
+            "$comment": "Procedure names must be standardized for analysis.",
+            "description": "Name or description of the procedure.",
+            "examples": ["NJX AA&/STRD TFRML EPI LUMBAR/SACRAL 1 LEVEL", "Neurosurgery Procedure"],
+            "type": "string"
+          },
+          "Procedure_Type": {
+            "$comment": "Type categorizes the procedure's method or purpose.",
+            "description": "Type or category of the procedure.",
+            "examples": ["Surgical", "Diagnostic", "Therapeutic"],
+            "type": "string"
+          },
+          "Procedure_Result": {
+            "$comment": "Results describe the procedure outcome if available.",
+            "description": "Outcome or result of the procedure.",
+            "type": "string"
+          }
+        },
+        "required": ["Procedure_Date", "Provider", "Procedure_Name"],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "claude:options": {
+    "extractionHints": {
+      "global": "Extract all dates in ISO 8601 format (YYYY-MM-DD) for database compatibility. Numbers should be extracted as numeric values without text modifiers.",
+      "header_fields": "Extract patient name exactly as it appears in the document. Calculate age accurately from Date_Of_Birth to Report_Date.",
+      "Provider_Information": "Standardize provider names to match exactly one of the three main providers (Duly Health and Care, Northwestern Medicine, Edward-Elmhurst Health) or their sub-entities.",
+      "Allergies": "Extract allergies exactly as listed in the document. If 'No Known Allergies' is indicated, record it as such.",
+      "Conditions": "Extract condition names exactly as they appear in the document. Standardize status values to 'Active', 'Resolved', or 'Chronic' where possible.",
+      "Immunizations": "Extract vaccine names exactly as they appear in the document. Categorize vaccines into standardized types where possible.",
+      "Procedures": "Extract procedure names exactly as they appear in the document. Categorize procedures into standardized types (Surgical, Diagnostic, Therapeutic) where possible."
+    },
+    "validationHints": {
+      "Dates": "Verify all dates are in valid ISO 8601 format (YYYY-MM-DD) and chronologically possible.",
+      "PatientConsistency": "Ensure patient name is consistent across all documents for the same patient.",
+      "ProviderConsistency": "Standardize provider names to match exactly one of the three main providers or their sub-entities."
+    },
+    "globalFormatting": {
+      "dateFormat": "All dates must be extracted in ISO 8601 format (YYYY-MM-DD) for proper database compatibility and date calculations.",
+      "numberFormat": "Extract numeric values without text modifiers, preserving decimal precision as shown in the document."
+    }
+  }
+}

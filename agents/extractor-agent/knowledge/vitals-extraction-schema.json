@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "header_fields": {
+      "properties": {
+        "Patient_Name": {
+          "$comment": "Patient's full name as it appears across documents.",
+          "description": "Full name of the patient.",
+          "examples": ["GEORGE VETTICADEN"],
+          "type": "string"
+        },
+        "Date_Of_Birth": {
+          "$comment": "Date of birth is crucial for patient identification.",
+          "description": "Patient's date of birth.",
+          "examples": ["1980-03-26"],
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "Report_Date": {
+          "$comment": "The date the health record was generated.",
+          "description": "Date the health report was generated.",
+          "examples": ["2025-05-16"],
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "Patient_Age": {
+          "$comment": "Age calculated from date of birth to report date.",
+          "description": "Patient's age at the time of the report.",
+          "examples": [45],
+          "type": "integer"
+        }
+      },
+      "required": ["Patient_Name", "Date_Of_Birth", "Report_Date", "Patient_Age"],
+      "type": "object"
+    },
+    "Vitals": {
+      "description": "Vital sign measurements in US customary units.",
+      "items": {
+        "properties": {
+          "Measurement_Date": {
+            "$comment": "Measurement dates enable longitudinal analysis.",
+            "description": "Date when vital signs were measured.",
+            "examples": ["2025-04-09"],
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "type": "string"
+          },
+          "Provider": {
+            "$comment": "Provider information helps track measurement sources.",
+            "description": "Healthcare provider who took the measurements.",
+            "examples": ["Duly Health and Care"],
+            "type": "string"
+          },
+          "Vital_Type": {
+            "$comment": "Vital type must be standardized for analysis.",
+            "description": "Type of vital sign measurement.",
+            "examples": ["Blood Pressure", "Weight", "Height", "BMI", "Pulse", "Temperature"],
+            "type": "string"
+          },
+          "Vital_Value": {
+            "$comment": "Values must be extracted exactly as shown and converted to US units where applicable.",
+            "description": "Measured value of the vital sign, converted to US units if necessary.",
+            "examples": [124, 80, 185.5, 98.6],
+            "type": "number"
+          },
+          "Vital_Unit": {
+            "$comment": "Units must use US customary system (convert cm to inches, kg to lb, °C to °F).",
+            "description": "Unit of measurement for the vital sign in US customary units.",
+            "examples": ["mmHg", "lb", "in", "/min", "°F"],
+            "type": "string"
+          },
+          "Reference_Low": {
+            "$comment": "Reference ranges help identify abnormal values. Must be converted to US units.",
+            "description": "Lower end of normal reference range in US units if available.",
+            "type": "number"
+          },
+          "Reference_High": {
+            "$comment": "Reference ranges help identify abnormal values. Must be converted to US units.",
+            "description": "Upper end of normal reference range in US units if available.",
+            "type": "number"
+          },
+          "Flag": {
+            "$comment": "Flags indicate abnormal values.",
+            "description": "Flag indicating abnormal values (e.g., OUT OF RANGE).",
+            "type": "string"
+          }
+        },
+        "required": ["Measurement_Date", "Provider", "Vital_Type", "Vital_Value"],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "claude:options": {
+    "extractionHints": {
+      "global": "Extract all dates in ISO 8601 format (YYYY-MM-DD) for database compatibility. Convert all metric measurements to US customary units where applicable.",
+      "Vitals": "Convert vital measurements to US units: Height (cm to in): multiply by 0.393701; Weight (kg to lb): multiply by 2.20462; Temperature (°C to °F): multiply by 1.8 and add 32. For vital signs like blood pressure, extract both systolic and diastolic as separate values. Use the exact numeric values without rounding. IMPORTANT: Only include fields that have actual values - omit any fields (Vital_Unit, Reference_Low, Reference_High, Flag) that are empty or blank to reduce output size."
+    },
+    "validationHints": {
+      "Dates": "Verify all dates are in valid ISO 8601 format (YYYY-MM-DD) and chronologically possible.",
+      "MeasurementConsistency": "Ensure converted measurements use consistent US customary units for the same measurement types.",
+      "ProviderConsistency": "Standardize provider names to match exactly one of the three main providers or their sub-entities."
+    },
+    "globalFormatting": {
+      "dateFormat": "All dates must be extracted in ISO 8601 format (YYYY-MM-DD) for proper database compatibility and date calculations.",
+      "numberFormat": "Extract numeric values without text modifiers, preserving decimal precision as shown in the document.",
+      "unitConversion": "Convert all measurements from metric to US customary units: cm to inches, kg to pounds, °C to °F.",
+      "omitEmptyFields": "To optimize space, do not include properties with empty string values, zero values, or null values in the output JSON. Only include fields that have actual content."
+    }
+  }
+}

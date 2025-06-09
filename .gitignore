@@ -1,0 +1,89 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Sensitive data
+*.pem
+*.key
+*.p8
+.env.local
+.env.production
+
+# Snowflake credentials
+snowflake_key.pem
+snowflake_key.pub
+
+# Claude Desktop local configs (keep the template)
+# claude_desktop_config.json
+
+# Large files that shouldn't be in git
+*.pdf
+*.zip
+*.tar.gz
+
+# Lock files (keep pyproject.toml but ignore locks)
+poetry.lock
+Pipfile.lock
+uv.lock
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node modules (if any)
+node_modules/

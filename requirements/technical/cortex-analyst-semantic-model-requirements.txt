@@ -1,0 +1,509 @@
+# Snowflake Cortex Analyst Semantic Model Requirements
+# IMPORTANT: This file documents all requirements and common mistakes to avoid when creating semantic models
+# REFERENCE: Official specification in requirements/technical/Cortex_Analyst_semantic_model specification.pdf
+# WEB DOCS: https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst/semantic-model-spec
+
+## ⚠️ CRITICAL CORRECTIONS BASED ON OFFICIAL SPECIFICATION:
+# 1. JOIN TYPES: Only `inner` and `left_outer` are supported (NOT `left`, `right`, `outer`)
+# 2. METRICS: Both `facts` AND `metrics` sections are supported per official spec
+# 3. SIZE LIMITS: 1 MB file size limit, 32K token limit for semantic model
+# 4. DATA TYPES: Excludes VARIANT, OBJECT, GEOGRAPHY, ARRAY specifically
+
+## 1. SUPPORTED TOP-LEVEL FIELDS (Per Official Specification)
+Cortex Analyst supports these fields at the top level:
+- name (required)
+- description (optional)
+- comments (optional)
+- tables (required)
+- relationships (optional)
+
+NOTE: The specification shows tables can contain:
+- dimensions, time_dimensions, facts, metrics, filters (at table level, not top level)
+- verified_queries are not mentioned in the official spec but may be supported in practice
+
+## 1.1 CRITICAL SIZE LIMITS (Per Official Specification)
+- **Maximum file size**: 1 MB
+- **Maximum token limit**: 32K tokens for the semantic model
+- **Identifier rules**: Must follow Snowflake unquoted identifier rules
+- **Reserved keywords**: Avoid SQL reserved keywords in names
+
+## 2. CRITICAL TABLE STRUCTURE REQUIREMENTS
+
+### 2.1 Primary Keys and Join Keys are MANDATORY
+Every table MUST have a primary_key field defined AND the primary key column must also be defined as a dimension:
+```yaml
+tables:
+  - name: HEALTH_RECORDS
+    primary_key:
+      columns:
+        - RECORD_ID
+    dimensions:
+      - name: RECORD_ID        # ← PRIMARY KEY COLUMN MUST BE A DIMENSION
+        expr: RECORD_ID
+        data_type: VARCHAR(36)
+      - name: PATIENT_ID       # ← FOREIGN KEY COLUMNS MUST ALSO BE DIMENSIONS
+        expr: PATIENT_ID
+        data_type: VARCHAR(36)
+```
+**ERRORS**:
+- "Primary key column RECORD_ID defined in table HEALTH_RECORDS is not defined as a logical column on the table."
+- "Join relationship patient_health_records using join key `patient_id` which is not defined in logical table health_records."
+
+### 2.2 Table Fields: facts, metrics, dimensions, time_dimensions, filters
+Per the official specification, tables support these sections:
+```yaml
+# ✅ BOTH facts AND metrics are supported according to spec
+facts:
+  - name: ROW_COUNT
+    expr: COUNT(*)
+    data_type: NUMBER
+
+metrics:
+  - name: TOTAL_RECORDS
+    expr: COUNT(*)
+    data_type: NUMBER
+
+# NOTE: Previous guidance about "facts only" was incorrect per official spec
+```
+
+### 2.3 Data Types (Per Official Specification)
+Supported data types (exclude VARIANT, OBJECT, GEOGRAPHY, ARRAY):
+```yaml
+# ✅ SUPPORTED: Common SQL data types
+data_type: VARCHAR(36)
+data_type: VARCHAR(500)
+data_type: NUMBER
+data_type: FLOAT
+data_type: INTEGER
+data_type: BOOLEAN
+data_type: DATE
+data_type: TIMESTAMP_NTZ
+data_type: TIMESTAMP_LTZ
+
+# ❌ UNSUPPORTED per spec:
+data_type: VARIANT    # Not supported
+data_type: OBJECT     # Not supported
+data_type: GEOGRAPHY  # Not supported
+data_type: ARRAY      # Not supported
+```
+
+### 2.4 No Table-Level Description Fields
+Do NOT include `description:` at the table level - only at the model level and column level:
+```yaml
+# ✅ CORRECT: Description only at model and column level
+name: model_name
+description: Model description  # ← OK here
+tables:
+  - name: TABLE_NAME
+    # description: "table description"  ← ❌ REMOVE THIS
+    dimensions:
+      - name: COLUMN_NAME
+        expr: COLUMN_NAME
+        data_type: VARCHAR(100)
+        description: Column description  # ← OK here
+```
+
+## 3. RELATIONSHIP REQUIREMENTS
+
+### Use snake_case for field names
+Correct format:
+```yaml
+relationships:
+  - name: relationship_name
+    left_table: TABLE1      # ← snake_case
+    right_table: TABLE2     # ← snake_case
+    relationship_type: many_to_one
+    join_type: inner
+    relationship_columns:   # ← snake_case
+      - left_column: COL1   # ← snake_case
+        right_column: COL2  # ← snake_case
+```
+
+DO NOT use camelCase:
+- leftTable ❌ → left_table ✓
+- rightTable ❌ → right_table ✓
+- leftColumn ❌ → left_column ✓
+- rightColumn ❌ → right_column ✓
+
+### Supported relationship types
+ONLY these relationship_type values are allowed:
+- many_to_one ✓
+- one_to_one ✓
+- one_to_many ❌ (NOT SUPPORTED - must reverse tables to use many_to_one)
+
+### Join Types (OFFICIAL SPECIFICATION)
+ONLY these join_type values are supported:
+```yaml
+join_type: inner       # ✅ SUPPORTED
+join_type: left_outer  # ✅ SUPPORTED
+```
+
+❌ UNSUPPORTED join types:
+- left ❌ (use left_outer instead)
+- right ❌ 
+- outer ❌
+- full_outer ❌
+
+## 4. VERIFIED QUERIES REQUIREMENTS
+
+### Use 'sql' not 'verified_sql'
+Correct format:
+```yaml
+verified_queries:
+  - name: Query_Name_With_Underscores
+    question: What is my cholesterol?
+    sql: |              # ← Use 'sql' NOT 'verified_sql'
+      SELECT * FROM table
+    use_as_onboarding_question: true  # optional but recommended
+```
+
+### Additional optional fields for verified_queries:
+- name (recommended - use underscores)
+- use_as_onboarding_question (boolean)
+- verified_by (email)
+- verified_at (timestamp)
+
+## 5. CRITICAL DATA TYPE HANDLING FOR HEALTH ANALYTICS
+
+### 5.1 Use FLOAT for Numeric Lab Values
+**PROBLEM**: Cortex Analyst casts values as `DECIMAL(38,0)` (integers) which truncates decimals:
+- HbA1c: 6.1% becomes 6 → incorrect abnormal detection
+- Cholesterol: 85.5 becomes 85 → wrong trend calculations
+
+**SOLUTION**: Always use `FLOAT` for numeric health data:
+```yaml
+dimensions:
+  - name: LAB_RESULT_NUMERIC
+    expr: TRY_CAST(CASE WHEN RECORD_TYPE = 'LAB' THEN VALUE END AS FLOAT)
+    data_type: FLOAT  # ← Use FLOAT, not NUMBER
+
+facts:
+  - name: LAB_VALUE
+    expr: TRY_CAST(CASE WHEN RECORD_TYPE = 'LAB' THEN VALUE END AS FLOAT)
+    data_type: FLOAT  # ← Preserves decimal precision
+
+verified_queries:
+  - name: Lab_Query
+    sql: |
+      SELECT TRY_CAST(VALUE AS FLOAT)  -- ← Use FLOAT in verified queries too
+```
+
+### 5.2 Boolean Flags Must Return 'true'/'false' Strings
+For boolean-like dimensions that Cortex Analyst filters on, return string literals:
+```yaml
+# ✅ CORRECT: Returns 'true'/'false' strings
+- name: IS_ABNORMAL_LAB
+  expr: |
+    CASE 
+      WHEN conditions_met THEN 'true'
+      ELSE 'false'
+    END
+  data_type: VARCHAR(10)
+
+# ❌ WRONG: Returns descriptive text
+- name: IS_ABNORMAL_LAB  
+  expr: |
+    CASE 
+      WHEN conditions_met THEN 'Above Normal'  # Cortex Analyst expects 'true'
+      ELSE 'Normal'
+    END
+```
+
+### 5.3 Provide Both Boolean and Descriptive Dimensions
+Create separate dimensions for filtering vs. display:
+```yaml
+# For filtering by Cortex Analyst
+- name: IS_ABNORMAL_LAB
+  expr: CASE WHEN abnormal_logic THEN 'true' ELSE 'false' END
+  data_type: VARCHAR(10)
+
+# For human-readable results  
+- name: ABNORMAL_TYPE
+  expr: CASE WHEN abnormal_logic THEN 'Above Normal' ELSE 'Normal' END
+  data_type: VARCHAR(50)
+```
+
+## 6. COMMON MISTAKES TO AVOID
+
+1. **Using one_to_many relationships**
+   - Instead of: PATIENTS → HEALTH_RECORDS (one_to_many)
+   - Use: HEALTH_RECORDS → PATIENTS (many_to_one)
+
+2. **Missing primary key dimensions**
+   - Every primary key column MUST also be defined as a dimension
+   - Error: "Primary key column X is not defined as a logical column"
+
+3. **Wrong field names in relationships**
+   - Use snake_case everywhere (left_table, right_table, left_column, right_column)
+   - Include relationship_columns as an array
+
+4. **Incorrect join types**
+   - Use only `inner` or `left_outer` - no other join types are supported
+   - ❌ Wrong: `left`, `right`, `outer`, `full_outer`
+
+5. **Generic data types without precision**
+   - Use VARCHAR(36) not VARCHAR, FLOAT not NUMBER
+   
+6. **Using NUMBER for decimal health values**
+   - Always use FLOAT for lab values, vital signs, dosages
+   - Prevents truncation of decimal values in Cortex Analyst queries
+
+7. **File size violations**
+   - Exceeding 1 MB file size limit
+   - Exceeding 32K token limit for semantic model
+
+## 7. VALIDATION CHECKLIST
+
+### Phase 1: Basic Validation (Must Pass Per Official Spec)
+□ All tables have primary_key defined
+□ **All primary key columns are also defined as dimensions**
+□ **All foreign key columns used in relationships are defined as dimensions**
+□ File size under 1 MB limit
+□ Semantic model under 32K token limit
+□ Only supported data types used (no VARIANT, OBJECT, GEOGRAPHY, ARRAY)
+□ All relationships use snake_case field names (left_table, right_table, etc.)
+□ All relationships use many_to_one or one_to_one only
+□ **Only supported join types used: `inner` or `left_outer`**
+□ Identifiers follow Snowflake unquoted identifier rules
+□ No SQL reserved keywords in names
+
+### Phase 2: Health Data Optimization (For Correct Results)
+□ All numeric health values use FLOAT data type, not NUMBER
+□ Boolean filter dimensions return 'true'/'false' strings
+□ Provide both boolean (IS_X) and descriptive (X_TYPE) dimensions
+□ Use TRY_CAST(...AS FLOAT) in all verified queries for numeric comparisons
+□ Reference range comparisons use FLOAT casting to preserve decimals
+□ Complex logic (like abnormal detection) is pre-built into dimensions
+□ Time dimensions include both DATE and extracted components (YEAR, MONTH)
+
+## 7. DESIGNING FOR COMPLEX ANALYTICAL QUERIES
+
+### Understanding Cortex Analyst Limitations
+Cortex Analyst works best with:
+- Simple column-to-column joins defined in relationships
+- Direct aggregations on base tables
+- Pre-defined measures and dimensions
+
+### Proactive Design Patterns for Complex Analytics
+
+#### 1. **Add Time-Based Dimensions**
+Instead of forcing users to write DATE_TRUNC expressions, pre-define common time dimensions:
+```yaml
+time_dimensions:
+  - name: RECORD_DATE
+    expr: RECORD_DATE
+    data_type: DATE
+  - name: RECORD_MONTH
+    expr: DATE_TRUNC('MONTH', RECORD_DATE)
+    data_type: DATE
+    description: Month for trend analysis
+  - name: RECORD_YEAR
+    expr: EXTRACT(YEAR FROM RECORD_DATE)
+    data_type: NUMBER
+```
+
+#### 2. **Create Specific Measures for Common Aggregations**
+Define measures that combine filtering and aggregation to avoid complex CTEs:
+```yaml
+measures:
+  # Instead of requiring CASE statements, provide specific measures
+  - name: ACTIVE_MEDICATION_COUNT
+    expr: COUNT(CASE WHEN RECORD_TYPE = 'MEDICATION' AND STATUS = 'ACTIVE' THEN 1 END)
+    data_type: NUMBER
+  - name: AVG_TOTAL_CHOLESTEROL
+    expr: AVG(CASE WHEN RECORD_TYPE = 'LAB' AND NAME = 'Cholesterol Total' THEN TRY_CAST(VALUE AS NUMERIC) END)
+    data_type: NUMBER
+```
+
+#### 3. **Use Custom Instructions for Query Guidance**
+Add customInstructions to guide Cortex Analyst on complex patterns:
+```yaml
+customInstructions: |
+  When analyzing correlations between different record types:
+  1. Use RECORD_MONTH dimension for monthly trends
+  2. Group by PATIENT_ID and time dimension
+  3. Use pre-defined measures like ACTIVE_MEDICATION_COUNT
+  4. For filtering specific items, use LOWER(NAME) LIKE patterns
+```
+
+#### 4. **Design Tables with Analytics in Mind**
+Structure your data model to minimize complex joins:
+- Denormalize where appropriate
+- Include commonly needed fields in fact tables
+- Ensure all analytical dimensions are directly accessible
+
+### Example: Supporting Medication-Lab Correlation Analysis
+
+Instead of requiring complex CTEs and joins, design the semantic model with:
+
+1. **Time dimensions** for easy temporal grouping
+2. **Specific measures** for medication counts and lab averages
+3. **Clear relationships** at the grain needed (patient level)
+4. **Custom instructions** explaining the correlation pattern
+
+This approach enables Cortex Analyst to generate simpler, working SQL without pre-written queries.
+
+## 8. WORKING EXAMPLE STRUCTURE
+
+Based on our successful health intelligence semantic model:
+
+```yaml
+name: health_intelligence_semantic_model
+description: Semantic model for Health Intelligence System
+
+tables:
+  - name: HEALTH_RECORDS
+    base_table:
+      database: HEALTH_INTELLIGENCE
+      schema: HEALTH_RECORDS
+      table: HEALTH_RECORDS
+    primary_key:
+      columns:
+        - RECORD_ID
+    dimensions:
+      # ✅ PRIMARY KEY MUST BE A DIMENSION
+      - name: RECORD_ID
+        expr: RECORD_ID
+        data_type: VARCHAR(36)  # ✅ Include precision
+      
+      # ✅ FLOAT for numeric health values
+      - name: LAB_RESULT_NUMERIC
+        expr: TRY_CAST(CASE WHEN RECORD_TYPE = 'LAB' THEN VALUE END AS FLOAT)
+        data_type: FLOAT
+      
+      # ✅ Boolean dimension for filtering
+      - name: IS_ABNORMAL_LAB
+        expr: |
+          CASE 
+            WHEN RECORD_TYPE = 'LAB' AND REFERENCE_RANGE LIKE '%to%'
+            THEN CASE 
+              WHEN TRY_CAST(VALUE AS FLOAT) < TRY_CAST(SPLIT_PART(REFERENCE_RANGE, ' to ', 1) AS FLOAT) THEN 'true'
+              WHEN TRY_CAST(VALUE AS FLOAT) > TRY_CAST(SPLIT_PART(REFERENCE_RANGE, ' to ', 2) AS FLOAT) THEN 'true'
+              ELSE 'false'
+            END
+            ELSE 'false'
+          END
+        data_type: VARCHAR(10)
+
+    # ✅ Use 'facts' not 'measures'
+    facts:
+      - name: TOTAL_RECORDS
+        expr: COUNT(*)
+        data_type: NUMBER
+
+relationships:
+  - name: patient_health_records
+    left_table: HEALTH_RECORDS
+    right_table: PATIENTS
+    relationship_type: many_to_one  # ✅ Use many_to_one
+    join_type: inner                # ✅ Supported join type (inner or left_outer only)
+    relationship_columns:
+      - left_column: PATIENT_ID
+        right_column: PATIENT_ID
+
+verified_queries:
+  - name: Abnormal_Lab_Results
+    question: Show my abnormal lab results from the past year
+    sql: |
+      SELECT 
+        RECORD_DATE,
+        NAME as test_name,
+        VALUE as result_value,
+        TRY_CAST(VALUE AS FLOAT) as numeric_value  -- ✅ Use FLOAT
+      FROM HEALTH_RECORDS
+      WHERE RECORD_TYPE = 'LAB'
+        AND TRY_CAST(VALUE AS FLOAT) IS NOT NULL  -- ✅ FLOAT casting
+      ORDER BY RECORD_DATE DESC
+    use_as_onboarding_question: true
+```
+
+## 9. LESSONS LEARNED SUMMARY
+
+### What Causes Validation Failures:
+1. **Missing primary key dimensions** → "Primary key column X is not defined as a logical column"
+2. **Using 'measures' instead of 'facts'** → Structural validation errors
+3. **Generic data types** (VARCHAR vs VARCHAR(36)) → Type validation errors
+4. **Table-level descriptions** → Unexpected field errors
+
+### What Causes Empty Query Results:
+1. **Using NUMBER instead of FLOAT** → Decimal truncation (6.1 becomes 6)
+2. **Boolean dimensions returning descriptive text** → Filter mismatches ('Above Normal' vs 'true')
+3. **Incorrect type casting in verified queries** → DECIMAL(38,0) vs FLOAT
+
+### The Two-Phase Approach:
+**Phase 1**: Create semantic model that passes validation  
+**Phase 2**: Optimize for correct query results with proper data types
+
+=============================================================================
+AFTER CREATING THE SEMANTIC MODEL
+=============================================================================
+
+When asked to create a semantic model, Claude Code should also provide instructions for:
+
+1. Uploading to Snowflake:
+   ```
+   Here are the commands to upload the semantic model to Snowflake:
+
+   1. First, make sure you're in the semantic-model directory:
+      cd semantic-model/snowflake
+
+   2. Upload the YAML file to the RAW_DATA stage:
+      snow stage copy health_intelligence_semantic_model.yaml @HEALTH_INTELLIGENCE.HEALTH_RECORDS.RAW_DATA
+
+      Or using the Snowflake UI:
+      - Navigate to HEALTH_INTELLIGENCE > HEALTH_RECORDS > Stages
+      - Click on RAW_DATA stage
+      - Upload health_intelligence_semantic_model.yaml
+
+   3. Verify the upload:
+      LIST @HEALTH_INTELLIGENCE.HEALTH_RECORDS.RAW_DATA;
+   ```
+
+2. Testing with Cortex Analyst:
+   - Navigate to Cortex Analyst in Snowflake UI
+   - Create new semantic model pointing to: @RAW_DATA/health_intelligence_semantic_model.yaml
+   - Test with example queries from the agent instructions
+
+3. Common test queries to try:
+   - "Show me my cholesterol trends over the past 5 years"
+   - "What medications am I currently taking?"
+   - "Show my abnormal lab results from this year"
+
+## 10. CRITICAL JOIN KEY REQUIREMENT (UPDATED)
+
+### 🚨 Every Join Key Must Be Defined as a Dimension
+**Rule**: Every column referenced in relationship join keys MUST be defined as a dimension in its respective table.
+
+**Common Error**: "Join relationship patient_health_records using join key `patient_id` which is not defined in logical table health_records."
+
+**Root Cause**: Foreign key columns used in relationships were not defined as dimensions.
+
+**Solution**: Always define foreign key columns as dimensions:
+```yaml
+# In HEALTH_RECORDS table
+dimensions:
+  - name: PATIENT_ID      # ← Must be defined even if it's just a foreign key
+    expr: PATIENT_ID
+    data_type: VARCHAR(36)
+    description: Patient identifier for joining to PATIENTS table
+
+# Then you can use it in relationships
+relationships:
+  - name: patient_health_records
+    left_table: HEALTH_RECORDS
+    right_table: PATIENTS
+    relationship_columns:
+      - left_column: PATIENT_ID   # ← Now this works
+        right_column: PATIENT_ID
+```
+
+### Updated Validation Checklist
+Before deploying any semantic model:
+- [ ] **All primary key columns are defined as dimensions**
+- [ ] **All foreign key columns used in relationships are defined as dimensions**
+- [ ] **Scan all column names for "NAME" - rename to IDENTITY, DESCRIPTION, LABEL**
+- [ ] **Scan all column names for "TYPE" - rename to CATEGORY, KIND, ROLE, CLASS**  
+- [ ] **Scan all column names for "UNIT" - rename to DIMENSION, SCALE, MEASURE**
+- [ ] **Test semantic model upload to confirm no validation errors**
+
+This requirement prevents the most common relationship validation failure in Cortex Analyst semantic models.

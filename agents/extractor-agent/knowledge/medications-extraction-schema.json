@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "header_fields": {
+      "properties": {
+        "Patient_Name": {
+          "$comment": "Patient's full name as it appears across documents.",
+          "description": "Full name of the patient.",
+          "examples": ["GEORGE VETTICADEN"],
+          "type": "string"
+        },
+        "Date_Of_Birth": {
+          "$comment": "Date of birth is crucial for patient identification.",
+          "description": "Patient's date of birth.",
+          "examples": ["1980-03-26"],
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "Report_Date": {
+          "$comment": "The date the health record was generated.",
+          "description": "Date the health report was generated.",
+          "examples": ["2025-05-16"],
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "Patient_Age": {
+          "$comment": "Age calculated from date of birth to report date.",
+          "description": "Patient's age at the time of the report.",
+          "examples": [45],
+          "type": "integer"
+        }
+      },
+      "required": ["Patient_Name", "Date_Of_Birth", "Report_Date", "Patient_Age"],
+      "type": "object"
+    },
+    "Medications": {
+      "description": "Medication prescriptions and history.",
+      "items": {
+        "properties": {
+          "Prescription_Date": {
+            "$comment": "Prescription dates enable medication timeline analysis.",
+            "description": "Date when the medication was prescribed.",
+            "examples": ["2025-04-09"],
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "type": "string"
+          },
+          "Provider": {
+            "$comment": "Provider identification helps track prescribing patterns.",
+            "description": "Healthcare provider who prescribed the medication.",
+            "examples": ["Duly Health and Care"],
+            "type": "string"
+          },
+          "Medication_Name": {
+            "$comment": "Base medication name without dosage or form.",
+            "description": "Name of the medication without dosage or form details.",
+            "examples": ["rosuvastatin", "Bystolic", "nebivolol", "Crestor"],
+            "type": "string"
+          },
+          "Dosage": {
+            "$comment": "Dosage information is crucial for medication analysis.",
+            "description": "Dosage of the medication.",
+            "examples": ["5 MG", "145 MG", "60 MG"],
+            "type": "string"
+          },
+          "Form": {
+            "$comment": "Form describes the medication delivery method.",
+            "description": "Form or preparation of the medication.",
+            "examples": ["Tabs", "Tablet", "Capsule"],
+            "type": "string"
+          },
+          "Frequency": {
+            "$comment": "Frequency helps establish medication regimen.",
+            "description": "How often the medication is taken.",
+            "examples": ["Once daily", "Twice daily", "As needed"],
+            "type": "string"
+          },
+          "For_Condition": {
+            "$comment": "Condition links medication to its therapeutic purpose.",
+            "description": "Condition the medication is treating.",
+            "examples": ["Hypertension", "Diabetes", "Anxiety"],
+            "type": "string"
+          },
+          "End_Date": {
+            "$comment": "End dates help establish medication duration.",
+            "description": "Date when the medication was discontinued if applicable.",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "type": "string"
+          },
+          "Status": {
+            "$comment": "Status indicates if medication is current or historical.",
+            "description": "Current status of the medication.",
+            "examples": ["Active", "Discontinued", "Completed"],
+            "type": "string"
+          }
+        },
+        "required": ["Prescription_Date", "Provider", "Medication_Name"],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "claude:options": {
+    "extractionHints": {
+      "global": "Extract all dates in ISO 8601 format (YYYY-MM-DD) for database compatibility.",
+      "Medications": "When extracting medications, parse the full medication string into separate components: 1) Medication_Name (base medication name without dosage or form), 2) Dosage (the strength with units, e.g., '5 MG'), and 3) Form (e.g., 'Tabs', 'Tablet', 'Capsule'). Example: For 'rosuvastatin 5 MG Tabs', extract Medication_Name='rosuvastatin', Dosage='5 MG', Form='Tabs'. For 'FISH OIL OR', extract Medication_Name='FISH OIL', Form='OR'. Extract frequency information if available (e.g., 'once daily'). IMPORTANT: Only include fields that have actual values - omit any fields that are empty or blank to reduce output size."
+    },
+    "validationHints": {
+      "Dates": "Verify all dates are in valid ISO 8601 format (YYYY-MM-DD) and chronologically possible.",
+      "ProviderConsistency": "Standardize provider names to match exactly one of the three main providers or their sub-entities."
+    },
+    "globalFormatting": {
+      "dateFormat": "All dates must be extracted in ISO 8601 format (YYYY-MM-DD) for proper database compatibility and date calculations.",
+      "numberFormat": "Extract numeric values without text modifiers, preserving decimal precision as shown in the document.",
+      "omitEmptyFields": "To optimize space, do not include properties with empty string values, zero values, or null values in the output JSON. Only include fields that have actual content."
+    }
+  }
+}

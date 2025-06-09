@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "header_fields": {
+      "properties": {
+        "Patient_Name": {
+          "$comment": "Patient's full name as it appears across documents.",
+          "description": "Full name of the patient.",
+          "examples": ["GEORGE VETTICADEN"],
+          "type": "string"
+        },
+        "Date_Of_Birth": {
+          "$comment": "Date of birth is crucial for patient identification.",
+          "description": "Patient's date of birth.",
+          "examples": ["1980-03-26"],
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "Report_Date": {
+          "$comment": "The date the health record was generated.",
+          "description": "Date the health report was generated.",
+          "examples": ["2025-05-16"],
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "Patient_Age": {
+          "$comment": "Age calculated from date of birth to report date.",
+          "description": "Patient's age at the time of the report.",
+          "examples": [45],
+          "type": "integer"
+        }
+      },
+      "required": ["Patient_Name", "Date_Of_Birth", "Report_Date", "Patient_Age"],
+      "type": "object"
+    },
+    "Lab_Results": {
+      "description": "Laboratory test results grouped by date and provider",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Test_Date": {
+            "description": "Date when the lab tests were performed",
+            "examples": ["2025-04-07"],
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "type": "string"
+          },
+          "Provider": {
+            "description": "Healthcare provider who ordered or performed the tests",
+            "examples": ["Duly Health and Care"],
+            "type": "string"
+          },
+          "Tests": {
+            "description": "Collection of test results for this date and provider",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "Test_Name": {
+                  "description": "Name of the laboratory test",
+                  "examples": ["Glucose", "HbA1c", "Cholesterol", "ALT", "Creatinine"],
+                  "type": "string"
+                },
+                "Test_Value": {
+                  "description": "Result value of the test",
+                  "examples": ["98", "6.1", "149"],
+                  "type": "string"
+                },
+                "Test_Unit": {
+                  "description": "Unit of measurement for the test result",
+                  "examples": ["mg/dL", "%", "IU/L"],
+                  "type": "string"
+                },
+                "Reference_Range": {
+                  "description": "Normal reference range for the test",
+                  "examples": ["74 to 109", "4 to 5.6"],
+                  "type": "string"
+                },
+                "Flag": {
+                  "description": "Flag indicating abnormal results (e.g., OUT OF RANGE)",
+                  "examples": ["OUT OF RANGE"],
+                  "type": "string"
+                },
+                "Test_Category": {
+                  "description": "Category or panel the test belongs to",
+                  "examples": ["Metabolic", "Lipid", "Liver", "Kidney"],
+                  "type": "string",
+                  "enum": [
+                    "Metabolic",
+                    "Lipid",
+                    "Liver",
+                    "Kidney",
+                    "Electrolytes",
+                    "Blood Count",
+                    "Iron",
+                    "Thyroid",
+                    "Cardiac",
+                    "Inflammation",
+                    "Vitamin",
+                    "Hormone",
+                    "Coagulation",
+                    "Allergy",
+                    "Toxicology",
+                    "Infectious Disease",
+                    "Tumor Marker",
+                    "Autoimmune",
+                    "Other"
+                  ]
+                }
+              },
+              "required": ["Test_Name", "Test_Value"]
+            }
+          }
+        },
+        "required": ["Test_Date", "Provider", "Tests"]
+      }
+    }
+  },
+  "claude:options": {
+    "extractionHints": {
+      "global": "Extract all dates in ISO 8601 format (YYYY-MM-DD) for database compatibility.",
+      "Lab_Results": "For test names, use the exact term as it appears in the document. Extract test values with their original units as shown in the source. IMPORTANT: Only include fields that have actual values - omit any fields (Test_Unit, Reference_Range, Flag) that are empty or blank to reduce output size.",
+      "Test_Category": "Map each test to one of the predefined categories in the enum list. Use the following mapping guidelines but strictly adhere to the enum values: Metabolic: Glucose, HbA1c, Insulin, Blood Sugar, Glucose Tolerance, Fructosamine, C-peptide; Lipid: Cholesterol, HDL, LDL, Triglycerides, Apolipoprotein, Lipoprotein(a); Liver: ALT, AST, Alkaline Phosphatase, Bilirubin, GGT, Albumin, Protein; Kidney: Creatinine, BUN, eGFR, Urea, Uric Acid, Cystatin C; Electrolytes: Sodium, Potassium, Chloride, Calcium, Phosphate, Magnesium; Blood Count: Hemoglobin, Hematocrit, RBC, WBC, Platelets, MCV, MCH, MCHC; Iron: Ferritin, Iron, TIBC, Transferrin, Transferrin Saturation; Thyroid: TSH, T3, T4, Free T3, Free T4, Thyroid Antibodies; Cardiac: Troponin, CK-MB, BNP, NT-proBNP, CRP, Homocysteine; Inflammation: ESR, CRP, Fibrinogen, Procalcitonin; Vitamin: Vitamin B12, Vitamin D, Folate, Vitamin A, Vitamin E; Hormone: Testosterone, Estrogen, Progesterone, FSH, LH, DHEA, Cortisol; Coagulation: PT, INR, PTT, D-dimer, Fibrinogen; Allergy: IgE, Eosinophil Count, Specific Allergen Tests; Toxicology: Drug screens, Alcohol levels, Heavy metals; Infectious Disease: HIV, Hepatitis, Culture results, PCR tests; Tumor Marker: PSA, CEA, CA-125, AFP; Autoimmune: ANA, RF, Anti-CCP; Other: Use only if the test doesn't clearly fit into one of the above categories"
+    },
+    "validationHints": {
+      "Dates": "Verify all dates are in valid ISO 8601 format (YYYY-MM-DD) and chronologically possible.",
+      "ProviderConsistency": "Standardize provider names to match exactly one of the three main providers or their sub-entities."
+    },
+    "globalFormatting": {
+      "dateFormat": "All dates must be extracted in ISO 8601 format (YYYY-MM-DD) for proper database compatibility and date calculations.",
+      "numberFormat": "Extract numeric values without text modifiers, preserving decimal precision as shown in the document.",
+      "omitEmptyFields": "To optimize space, do not include properties with empty string values or null values in the output JSON. Only include fields that have actual content."
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "health-analysis-server": {
+      "command": "/Users/aju/.local/bin/uv",
+      "args": [
+        "--directory",
+        "/Users/aju/Dropbox/Development/Git/multi-agent-health-insight-system-test-run-1/tools/health-mcp",
+        "run",
+        "src/health_mcp.py"
+      ],
+      "env": {
+        "SNOWFLAKE_USER": "your_snowflake_username",
+        "SNOWFLAKE_ACCOUNT": "your_snowflake_account",
+        "SNOWFLAKE_PRIVATE_KEY_PATH": "~/.ssh/snowflake/snowflake_key.p8",
+        "SNOWFLAKE_WAREHOUSE": "COMPUTE_WH",
+        "SNOWFLAKE_DATABASE": "HEALTH_INTELLIGENCE",
+        "SNOWFLAKE_SCHEMA": "HEALTH_RECORDS",
+        "SNOWFLAKE_ROLE": "ACCOUNTADMIN",
+        "SNOWFLAKE_SEMANTIC_MODEL_FILE": "health_intelligence_semantic_model.yaml"
+      }
+    }
+  }
+}

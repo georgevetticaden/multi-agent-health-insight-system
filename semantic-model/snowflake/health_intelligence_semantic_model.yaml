@@ -1,0 +1,422 @@
+name: health_intelligence_semantic_model
+description: Semantic model for Health Intelligence System enabling natural language queries about patient health data including lab results, medications, vitals, and clinical information
+
+tables:
+  - name: PATIENTS
+    base_table:
+      database: HEALTH_INTELLIGENCE
+      schema: HEALTH_RECORDS
+      table: PATIENTS
+    primary_key:
+      columns:
+        - PATIENT_ID
+    dimensions:
+      - name: PATIENT_ID
+        expr: PATIENT_ID
+        data_type: VARCHAR(36)
+        description: Unique patient identifier
+      - name: PATIENT_IDENTITY
+        expr: PATIENT_IDENTITY
+        data_type: VARCHAR(255)
+        description: Patient name or identifier
+      - name: DATE_OF_BIRTH
+        expr: DATE_OF_BIRTH
+        data_type: DATE
+        description: Patient date of birth
+      - name: PATIENT_AGE
+        expr: PATIENT_AGE
+        data_type: INTEGER
+        description: Patient age in years
+    time_dimensions:
+      - name: DATE_OF_BIRTH_TIME
+        expr: DATE_OF_BIRTH
+        data_type: DATE
+        description: Birth date for age calculations
+
+  - name: HEALTH_RECORDS
+    base_table:
+      database: HEALTH_INTELLIGENCE
+      schema: HEALTH_RECORDS
+      table: HEALTH_RECORDS
+    primary_key:
+      columns:
+        - RECORD_ID
+    dimensions:
+      # Required: Primary key and foreign keys as dimensions
+      - name: RECORD_ID
+        expr: RECORD_ID
+        data_type: VARCHAR(36)
+        description: Unique health record identifier
+      - name: PATIENT_ID
+        expr: PATIENT_ID
+        data_type: VARCHAR(36)
+        description: Patient identifier for joining to patient data
+      - name: IMPORT_ID
+        expr: IMPORT_ID
+        data_type: VARCHAR(36)
+        description: Import batch identifier
+      
+      # Record categorization
+      - name: RECORD_CATEGORY
+        expr: RECORD_CATEGORY
+        data_type: VARCHAR(50)
+        description: Category of health record - LAB, MEDICATION, VITAL, CONDITION, PROCEDURE, ALLERGY, IMMUNIZATION
+      - name: PROVIDER
+        expr: PROVIDER
+        data_type: VARCHAR(255)
+        description: Healthcare provider name
+      
+      # Core data fields
+      - name: ITEM_DESCRIPTION
+        expr: ITEM_DESCRIPTION
+        data_type: VARCHAR(500)
+        description: Name or description of the health item - test name, medication name, vital sign, condition, etc.
+      - name: VALUE_TEXT
+        expr: VALUE_TEXT
+        data_type: VARCHAR(1000)
+        description: Text value for qualitative results like POSITIVE, NEGATIVE, or descriptive values
+      
+      # Numeric values - Use DECIMAL to match database column type
+      - name: VALUE_NUMERIC
+        expr: VALUE_NUMERIC
+        data_type: NUMBER
+        description: Numeric value for quantitative results - lab values, vital signs, dosages
+      - name: LAB_RESULT_NUMERIC
+        expr: CASE WHEN RECORD_CATEGORY = 'LAB' THEN VALUE_NUMERIC END
+        data_type: NUMBER
+        description: Numeric lab test results with decimal precision preserved
+      - name: VITAL_RESULT_NUMERIC
+        expr: CASE WHEN RECORD_CATEGORY = 'VITAL' THEN VALUE_NUMERIC END
+        data_type: NUMBER
+        description: Numeric vital sign measurements
+      
+      # Units and ranges
+      - name: MEASUREMENT_DIMENSION
+        expr: MEASUREMENT_DIMENSION
+        data_type: VARCHAR(50)
+        description: Unit of measurement - mg/dL, mmHg, %, etc.
+      - name: REFERENCE_RANGE
+        expr: REFERENCE_RANGE
+        data_type: VARCHAR(200)
+        description: Normal reference range for lab tests
+      - name: FLAG
+        expr: FLAG
+        data_type: VARCHAR(100)
+        description: Lab result flag indicating abnormal values
+      
+      # Lab-specific fields
+      - name: TEST_CATEGORY
+        expr: TEST_CATEGORY
+        data_type: VARCHAR(100)
+        description: Category of lab test - Liver, Kidney, Blood Count, Metabolic, etc.
+      
+      # Boolean flags for filtering - CRITICAL: Return 'true'/'false' strings
+      - name: IS_ABNORMAL_LAB
+        expr: |
+          CASE 
+            WHEN RECORD_CATEGORY = 'LAB' AND FLAG IS NOT NULL AND FLAG != '' THEN 'true'
+            WHEN RECORD_CATEGORY = 'LAB' AND REFERENCE_RANGE LIKE '%to%' AND VALUE_NUMERIC IS NOT NULL THEN
+              CASE 
+                WHEN VALUE_NUMERIC < TRY_CAST(SPLIT_PART(REFERENCE_RANGE, ' to ', 1) AS NUMBER) THEN 'true'
+                WHEN VALUE_NUMERIC > TRY_CAST(SPLIT_PART(REFERENCE_RANGE, ' to ', 2) AS NUMBER) THEN 'true'
+                ELSE 'false'
+              END
+            ELSE 'false'
+          END
+        data_type: VARCHAR(10)
+        description: Whether lab result is outside normal range - true for abnormal, false for normal
+      
+      - name: IS_LAB_RESULT
+        expr: CASE WHEN RECORD_CATEGORY = 'LAB' THEN 'true' ELSE 'false' END
+        data_type: VARCHAR(10)
+        description: Whether record is a lab result
+      
+      - name: IS_MEDICATION
+        expr: CASE WHEN RECORD_CATEGORY = 'MEDICATION' THEN 'true' ELSE 'false' END
+        data_type: VARCHAR(10)
+        description: Whether record is a medication
+      
+      - name: IS_VITAL_SIGN
+        expr: CASE WHEN RECORD_CATEGORY = 'VITAL' THEN 'true' ELSE 'false' END
+        data_type: VARCHAR(10)
+        description: Whether record is a vital sign
+      
+      # Descriptive equivalents for display
+      - name: ABNORMAL_STATUS
+        expr: |
+          CASE 
+            WHEN RECORD_CATEGORY = 'LAB' AND FLAG IS NOT NULL AND FLAG != '' THEN 'Abnormal'
+            WHEN RECORD_CATEGORY = 'LAB' AND REFERENCE_RANGE LIKE '%to%' AND VALUE_NUMERIC IS NOT NULL THEN
+              CASE 
+                WHEN VALUE_NUMERIC < TRY_CAST(SPLIT_PART(REFERENCE_RANGE, ' to ', 1) AS NUMBER) THEN 'Below Normal'
+                WHEN VALUE_NUMERIC > TRY_CAST(SPLIT_PART(REFERENCE_RANGE, ' to ', 2) AS NUMBER) THEN 'Above Normal'
+                ELSE 'Normal'
+              END
+            ELSE 'Normal'
+          END
+        data_type: VARCHAR(50)
+        description: Human-readable abnormal status description
+      
+      # Medication-specific fields
+      - name: DOSAGE
+        expr: DOSAGE
+        data_type: VARCHAR(100)
+        description: Medication dosage amount and unit
+      - name: FORM
+        expr: FORM
+        data_type: VARCHAR(100)
+        description: Medication form - tablet, capsule, injection, etc.
+      - name: FOR_CONDITION
+        expr: FOR_CONDITION
+        data_type: VARCHAR(255)
+        description: Medical condition this medication treats
+      - name: FREQUENCY
+        expr: FREQUENCY
+        data_type: VARCHAR(100)
+        description: Medication dosing frequency - once daily, twice daily, etc.
+      - name: MEDICATION_STATUS
+        expr: MEDICATION_STATUS
+        data_type: VARCHAR(50)
+        description: Medication status - ACTIVE, DISCONTINUED, PRESCRIBED
+      
+      # Vital-specific fields
+      - name: VITAL_CATEGORY
+        expr: VITAL_CATEGORY
+        data_type: VARCHAR(100)
+        description: Type of vital sign measurement
+      
+      # Clinical data fields
+      - name: CONDITION_STATUS
+        expr: CONDITION_STATUS
+        data_type: VARCHAR(50)
+        description: Status of medical condition - Active, Resolved, Chronic
+      - name: VACCINE_CATEGORY
+        expr: VACCINE_CATEGORY
+        data_type: VARCHAR(100)
+        description: Type of vaccine - COVID-19, Influenza, etc.
+      - name: PROCEDURE_CATEGORY
+        expr: PROCEDURE_CATEGORY
+        data_type: VARCHAR(100)
+        description: Type of medical procedure
+      - name: ALLERGY_CATEGORY
+        expr: ALLERGY_CATEGORY
+        data_type: VARCHAR(100)
+        description: Type of allergy
+      
+      # Common health metrics for trends
+      - name: CHOLESTEROL_TOTAL
+        expr: CASE WHEN LOWER(ITEM_DESCRIPTION) LIKE '%cholesterol%total%' OR LOWER(ITEM_DESCRIPTION) LIKE '%total cholesterol%' THEN VALUE_NUMERIC END
+        data_type: NUMBER
+        description: Total cholesterol values for trend analysis
+      - name: CHOLESTEROL_LDL
+        expr: CASE WHEN LOWER(ITEM_DESCRIPTION) LIKE '%ldl%' OR LOWER(ITEM_DESCRIPTION) LIKE '%low density%' THEN VALUE_NUMERIC END
+        data_type: NUMBER
+        description: LDL cholesterol values
+      - name: CHOLESTEROL_HDL
+        expr: CASE WHEN LOWER(ITEM_DESCRIPTION) LIKE '%hdl%' OR LOWER(ITEM_DESCRIPTION) LIKE '%high density%' THEN VALUE_NUMERIC END
+        data_type: NUMBER
+        description: HDL cholesterol values
+      - name: HBA1C_VALUE
+        expr: CASE WHEN LOWER(ITEM_DESCRIPTION) LIKE '%hba1c%' OR LOWER(ITEM_DESCRIPTION) LIKE '%hemoglobin a1c%' THEN VALUE_NUMERIC END
+        data_type: NUMBER
+        description: HbA1c values for diabetes monitoring
+      - name: GLUCOSE_VALUE
+        expr: CASE WHEN LOWER(ITEM_DESCRIPTION) LIKE '%glucose%' AND RECORD_CATEGORY = 'LAB' THEN VALUE_NUMERIC END
+        data_type: NUMBER
+        description: Blood glucose values
+      - name: BLOOD_PRESSURE_SYSTOLIC
+        expr: CASE WHEN LOWER(ITEM_DESCRIPTION) LIKE '%blood pressure%' AND VITAL_CATEGORY = 'Blood Pressure' AND VALUE_NUMERIC > 50 THEN VALUE_NUMERIC END
+        data_type: NUMBER
+        description: Systolic blood pressure values (typically higher values)
+      - name: BLOOD_PRESSURE_DIASTOLIC
+        expr: CASE WHEN LOWER(ITEM_DESCRIPTION) LIKE '%blood pressure%' AND VITAL_CATEGORY = 'Blood Pressure' AND VALUE_NUMERIC <= 50 THEN VALUE_NUMERIC END
+        data_type: NUMBER
+        description: Diastolic blood pressure values (typically lower values)
+    
+    time_dimensions:
+      - name: RECORD_DATE
+        expr: RECORD_DATE
+        data_type: DATE
+        description: Date when the health record was created or test was performed
+      - name: RECORD_MONTH
+        expr: DATE_TRUNC('MONTH', RECORD_DATE)
+        data_type: DATE
+        description: Month of record for monthly trend analysis
+      - name: RECORD_YEAR
+        expr: EXTRACT(YEAR FROM RECORD_DATE)
+        data_type: NUMBER
+        description: Year of record for yearly trend analysis
+      - name: RECORD_QUARTER
+        expr: DATE_TRUNC('QUARTER', RECORD_DATE)
+        data_type: DATE
+        description: Quarter of record for quarterly analysis
+    
+    facts:
+      - name: TOTAL_RECORDS
+        expr: COUNT(*)
+        data_type: NUMBER
+        description: Total count of health records
+      - name: LAB_RESULTS_COUNT
+        expr: COUNT(CASE WHEN RECORD_CATEGORY = 'LAB' THEN 1 END)
+        data_type: NUMBER
+        description: Count of lab result records
+      - name: MEDICATIONS_COUNT
+        expr: COUNT(CASE WHEN RECORD_CATEGORY = 'MEDICATION' THEN 1 END)
+        data_type: NUMBER
+        description: Count of medication records
+      - name: VITALS_COUNT
+        expr: COUNT(CASE WHEN RECORD_CATEGORY = 'VITAL' THEN 1 END)
+        data_type: NUMBER
+        description: Count of vital sign records
+      - name: ABNORMAL_LABS_COUNT
+        expr: COUNT(CASE WHEN RECORD_CATEGORY = 'LAB' AND (FLAG IS NOT NULL AND FLAG != '') THEN 1 END)
+        data_type: NUMBER
+        description: Count of abnormal lab results
+      - name: AVG_CHOLESTEROL_TOTAL
+        expr: AVG(CASE WHEN LOWER(ITEM_DESCRIPTION) LIKE '%cholesterol%total%' OR LOWER(ITEM_DESCRIPTION) LIKE '%total cholesterol%' THEN VALUE_NUMERIC END)
+        data_type: NUMBER
+        description: Average total cholesterol value
+      - name: AVG_HBA1C
+        expr: AVG(CASE WHEN LOWER(ITEM_DESCRIPTION) LIKE '%hba1c%' THEN VALUE_NUMERIC END)
+        data_type: NUMBER
+        description: Average HbA1c value
+
+relationships:
+  - name: patient_health_records
+    left_table: HEALTH_RECORDS
+    right_table: PATIENTS
+    relationship_type: many_to_one
+    join_type: inner
+    relationship_columns:
+      - left_column: PATIENT_ID
+        right_column: PATIENT_ID
+
+verified_queries:
+  - name: Cholesterol_Trends_Over_Time
+    question: What's my cholesterol trend over time?
+    sql: |
+      SELECT 
+        RECORD_DATE,
+        ITEM_DESCRIPTION as test_name,
+        VALUE_NUMERIC as cholesterol_value,
+        MEASUREMENT_DIMENSION as unit,
+        REFERENCE_RANGE
+      FROM HEALTH_RECORDS
+      WHERE RECORD_CATEGORY = 'LAB'
+        AND LOWER(ITEM_DESCRIPTION) LIKE '%cholesterol%'
+        AND VALUE_NUMERIC IS NOT NULL
+      ORDER BY RECORD_DATE DESC
+    use_as_onboarding_question: true
+
+  - name: Abnormal_Lab_Results_This_Year
+    question: Show my abnormal lab results from this year
+    sql: |
+      SELECT 
+        RECORD_DATE,
+        ITEM_DESCRIPTION as test_name,
+        VALUE_NUMERIC as result_value,
+        VALUE_TEXT as text_result,
+        MEASUREMENT_DIMENSION as unit,
+        REFERENCE_RANGE,
+        FLAG as abnormal_flag,
+        PROVIDER
+      FROM HEALTH_RECORDS
+      WHERE RECORD_CATEGORY = 'LAB'
+        AND EXTRACT(YEAR FROM RECORD_DATE) = EXTRACT(YEAR FROM CURRENT_DATE())
+        AND (FLAG IS NOT NULL AND FLAG != '')
+      ORDER BY RECORD_DATE DESC
+    use_as_onboarding_question: true
+
+  - name: Current_Medications
+    question: What medications am I currently taking?
+    sql: |
+      SELECT 
+        ITEM_DESCRIPTION as medication_name,
+        DOSAGE,
+        FORM,
+        FOR_CONDITION,
+        FREQUENCY,
+        RECORD_DATE as prescription_date,
+        PROVIDER
+      FROM HEALTH_RECORDS
+      WHERE RECORD_CATEGORY = 'MEDICATION'
+        AND RECORD_DATE >= DATEADD('MONTH', -6, CURRENT_DATE())
+      ORDER BY RECORD_DATE DESC
+    use_as_onboarding_question: true
+
+  - name: Blood_Pressure_Trends_Monthly
+    question: Show my blood pressure trends by month
+    sql: |
+      SELECT 
+        DATE_TRUNC('MONTH', RECORD_DATE) as month,
+        AVG(CASE WHEN VALUE_NUMERIC > 50 THEN VALUE_NUMERIC END) as avg_systolic,
+        AVG(CASE WHEN VALUE_NUMERIC <= 50 THEN VALUE_NUMERIC END) as avg_diastolic,
+        COUNT(*) as reading_count
+      FROM HEALTH_RECORDS
+      WHERE RECORD_CATEGORY = 'VITAL'
+        AND VITAL_CATEGORY = 'Blood Pressure'
+        AND VALUE_NUMERIC IS NOT NULL
+      GROUP BY DATE_TRUNC('MONTH', RECORD_DATE)
+      ORDER BY month DESC
+    use_as_onboarding_question: true
+
+  - name: HbA1c_Levels_Over_Time
+    question: How have my HbA1c levels changed over time?
+    sql: |
+      SELECT 
+        RECORD_DATE,
+        VALUE_NUMERIC as hba1c_value,
+        MEASUREMENT_DIMENSION as unit,
+        REFERENCE_RANGE,
+        PROVIDER
+      FROM HEALTH_RECORDS
+      WHERE RECORD_CATEGORY = 'LAB'
+        AND LOWER(ITEM_DESCRIPTION) LIKE '%hba1c%'
+        AND VALUE_NUMERIC IS NOT NULL
+      ORDER BY RECORD_DATE DESC
+
+  - name: Diabetes_Medications
+    question: What medications am I taking for diabetes?
+    sql: |
+      SELECT 
+        ITEM_DESCRIPTION as medication_name,
+        DOSAGE,
+        FREQUENCY,
+        RECORD_DATE as prescription_date,
+        PROVIDER
+      FROM HEALTH_RECORDS
+      WHERE RECORD_CATEGORY = 'MEDICATION'
+        AND (LOWER(FOR_CONDITION) LIKE '%diabetes%' 
+             OR LOWER(ITEM_DESCRIPTION) LIKE '%metformin%'
+             OR LOWER(ITEM_DESCRIPTION) LIKE '%insulin%')
+      ORDER BY RECORD_DATE DESC
+
+  - name: Cholesterol_Medications
+    question: Show me all cholesterol medications I've taken
+    sql: |
+      SELECT 
+        ITEM_DESCRIPTION as medication_name,
+        DOSAGE,
+        FREQUENCY,
+        RECORD_DATE as prescription_date,
+        PROVIDER
+      FROM HEALTH_RECORDS
+      WHERE RECORD_CATEGORY = 'MEDICATION'
+        AND (LOWER(FOR_CONDITION) LIKE '%cholesterol%' 
+             OR LOWER(ITEM_DESCRIPTION) LIKE '%statin%'
+             OR LOWER(ITEM_DESCRIPTION) LIKE '%rosuvastatin%'
+             OR LOWER(ITEM_DESCRIPTION) LIKE '%ezetimibe%')
+      ORDER BY RECORD_DATE DESC
+
+  - name: Active_Medical_Conditions
+    question: List my active medical conditions
+    sql: |
+      SELECT 
+        ITEM_DESCRIPTION as condition_name,
+        CONDITION_STATUS as status,
+        RECORD_DATE as diagnosis_date,
+        PROVIDER
+      FROM HEALTH_RECORDS
+      WHERE RECORD_CATEGORY = 'CONDITION'
+        AND (CONDITION_STATUS = 'Active' OR CONDITION_STATUS IS NULL)
+      ORDER BY RECORD_DATE DESC
