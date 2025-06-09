@@ -3,7 +3,7 @@
 
 > **A comprehensive multi-agent system that extracts, analyzes, and visualizes 12+ years of health data from Apple Health exports using Claude Desktop, Snowflake, and advanced AI agents.**
 
-[![Architecture](docs/images/arch-images/multi-agent-component-architecture.png)](docs/images/arch-images/multi-agent-component-architecture.png)
+[![Multi-Agent Health Insight System](docs/images/arch-images/hero-image-multi-agent.png)](docs/images/arch-images/hero-image-multi-agent.png)
 
 ## Overview
 
@@ -33,10 +33,16 @@ The system leverages three core technologies:
 
 **Our solution**: A multi-agent system that transforms static health exports into interactive, conversational health intelligence.
 
-## System Components
+## Multi-Agent Component Architecture
 
-### 1. Health Data Extractor Agent
-**Role**: Schema-based extraction with 100% accuracy requirement
+[![Multi-Agent Component Architecture](docs/images/arch-images/multi-agent-component-architecture.png)](docs/images/arch-images/multi-agent-component-architecture.png)
+
+The architecture follows a clear **Extract → Load → Analyze** pipeline, with each component having one specialized job:
+
+### (1) Health Data Extraction Agent
+**Role**: Transforms unstructured PDFs into structured JSON with 100% accuracy
+
+The extraction agent doesn't try to analyze or visualize - it just extracts perfectly. This single-purpose design ensures reliability and maintainability.
 
 **Capabilities**:
 - Processes 200+ page Apple Health PDF exports
@@ -50,12 +56,14 @@ The system leverages three core technologies:
 - **Knowledge Base**: Apple Health PDF + JSON extraction schemas
 - **Output**: Structured JSON files by category and year
 
-### 2. Health Analyst Agent  
-**Role**: Data ingestion, analytics, and natural language querying
+### (2) Health Analyst Agent  
+**Role**: First loads extracted JSON files into Snowflake, then orchestrates the analytics workflow
+
+The analyst agent coordinates specialized tools that excel at natural language processing and SQL generation, then executes the SQL against the Snowflake data warehouse after receiving the generated SQL from the Cortex Analyst endpoint.
 
 **Capabilities**:
 - Imports extracted JSON into Snowflake data warehouse
-- Enables natural language health queries via Cortex Analyst
+- Orchestrates natural language queries via Cortex Analyst
 - Generates interactive visualizations using Claude Artifacts
 - Provides comprehensive health dashboards and trend analysis
 
@@ -64,6 +72,81 @@ The system leverages three core technologies:
 - **LLM**: Claude Opus 4 
 - **Tools**: Custom MCP Server with Snowflake integration
 - **Output**: Interactive React visualizations and health insights
+
+### (3) Snowflake Data Warehouse
+**Role**: Provides enterprise-grade storage and query performance
+
+When you're dealing with 12 years of lab results across multiple providers, you need sub-second response times. Snowflake delivers the performance and scalability required for complex health analytics.
+
+**Features**:
+- Enterprise-grade cloud data platform
+- Sub-second query response times for large datasets
+- Automatic scaling and optimization
+- Integrated Cortex Analyst capabilities
+
+### (4) Snowflake Cortex Analyst
+**Role**: Converts natural language to SQL with specialized focus
+
+Cortex Analyst doesn't try to be a general chatbot - it does one thing brilliantly: understanding health-related questions and generating precise SQL queries against your structured health data.
+
+**Capabilities**:
+- Natural language to SQL translation
+- Health domain-specific query understanding
+- Semantic model-powered query generation
+- Complex temporal and correlation analysis
+
+### (5) Custom MCP Snowflake Server
+**Role**: Provides the connectivity layer between agents and Snowflake
+
+The MCP server bridges Claude Desktop agents with Snowflake infrastructure through two specialized tools: one for bulk data import, one for query execution.
+
+**Tools Provided**:
+- **Health Data Import Tool**: Batch processing of JSON extraction files
+- **Natural Language Query Tool**: Real-time query execution via Cortex Analyst
+- **Authentication**: Secure connection management with Snowflake
+- **Error Handling**: Comprehensive validation and rollback capabilities
+
+## Development with Claude Code
+
+### Complete Workspace Understanding
+
+This project demonstrates Claude Code's revolutionary approach to agentic development - a capability that represents the most fundamental difference from every other development tool available today.
+
+[![Claude Code Workspace Understanding](docs/images/arch-images/claude-code-workspace-understanding.png)](docs/images/arch-images/claude-code-workspace-understanding.png)
+
+Traditional development tools like Cursor and Copilot require constant manual context management: adding files to context, explaining component relationships, and ensuring the AI understands the broader architecture. This context overhead significantly limits productivity and often results in dozens of iterations to achieve working code.
+
+**Claude Code eliminates this friction entirely** through automatic comprehension of your complete project structure.
+
+### CLAUDE.md Framework Implementation
+
+The key to unlocking Claude Code's capabilities lies in creating comprehensive design and requirements that serve as Claude Code's instruction manual. This project showcases the **CLAUDE.md Framework**:
+
+**📋 Business Requirements** ([`agents/analyst-agent/config/`](agents/analyst-agent/config/))
+- User workflows and access patterns
+- Health query types and success criteria
+- End-user perspective and use cases
+
+**⚙️ Technical Requirements** ([`requirements/technical/`](requirements/technical/))
+- Database design patterns and data modeling principles
+- Cortex Analyst integration specifications
+- MCP server implementation guidelines
+
+### Development Velocity Results
+
+This comprehensive context foundation transformed development outcomes:
+
+- **🎯 Production-ready code in 1-2 attempts** instead of dozens of iterations
+- **🚀 Complete MCP server generation** from technical specifications
+- **📊 Semantic model creation** directly from business requirements
+- **🗄️ Snowflake DDL generation** following data modeling principles
+
+**Key Artifacts Built with Claude Code:**
+- **Custom MCP Server** ([`tools/health-mcp/`](tools/health-mcp/)) - Complete implementation with dual health tools
+- **Semantic Model** ([`semantic-model/snowflake/`](semantic-model/snowflake/)) - Cortex Analyst configuration
+- **Database Schema** ([`data-store/snowflake/ddl/`](data-store/snowflake/ddl/)) - Enterprise-grade health data model
+
+The upfront investment in creating detailed design and requirements pays exponential dividends in development velocity and code quality. This approach showcases how proper project structure enables Claude Code to function as a true development partner rather than just a code completion tool.
 
 ## Sample Analytics & Visualizations
 
@@ -335,33 +418,6 @@ uv run python src/health_mcp.py
 └── requirements/                   # Technical specifications
     └── technical/                  # Implementation requirements
 ```
-
-## Key Features
-
-### 🎯 **100% Extraction Accuracy**
-- Schema-based extraction with validation
-- Character-for-character precision requirements
-- Comprehensive error detection and correction
-
-### 🧠 **Advanced Natural Language Processing**
-- Snowflake Cortex Analyst integration
-- Complex multi-table correlation queries
-- Intelligent query preprocessing and enhancement
-
-### 📊 **Interactive Visualizations**
-- Real-time React component generation
-- Clinical-grade charts with normal range overlays
-- Mobile-responsive health dashboards
-
-### 🔐 **Enterprise-Grade Security**
-- Snowflake enterprise data platform
-- Encrypted connections and secure authentication
-- Audit trails and data lineage tracking
-
-### 🚀 **Scalable Architecture**
-- Multi-agent design patterns
-- Model Context Protocol for extensibility
-- Comprehensive error handling and monitoring
 
 ## Demo Videos
 
