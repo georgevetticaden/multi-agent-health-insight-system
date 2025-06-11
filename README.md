@@ -7,9 +7,43 @@
 
 ## Overview
 
-This project demonstrates the power of modern AI agent architectures by solving a real-world problem: **Apple Health data is rich but unusable**. Despite having comprehensive health records spanning multiple providers, users can't perform meaningful analysis, track trends, or correlate medications with outcomes.
+### From Data Graveyard to Living Intelligence
 
-Our solution transforms 200+ page Apple Health PDFs into a conversational health intelligence system with **100% extraction accuracy** and natural language querying capabilities.
+This project demonstrates the power of modern AI agent architectures by solving a critical real-world problem: **Your health data is trapped in a digital graveyard**. 
+
+Apple Health aggregates years of medical records, lab results, medications, and vitals from multiple healthcare providers into comprehensive PDFs. Yet this treasure trove of personal health data remains frustratingly inaccessible - static, unsearchable, and impossible to analyze. Your health history becomes a 200+ page document that no one reads, including you.
+
+The solution transforms these static Apple Health PDF exports into a **conversational health intelligence system** that achieves:
+- **100% extraction accuracy** - Every data point preserved
+- **Natural language querying** - Ask questions like "What's my cholesterol trend?"
+- **Instant insights** - From hours of manual analysis to seconds of AI-powered intelligence
+- **12+ years of analysis** - Uncover patterns and correlations across your entire health history
+
+## Learn More: Blog Series & Video Tutorials
+
+### Part 1: Transform Health Data Into Intelligence
+**Multi-Agent System with Claude + MCP + Snowflake**
+
+[![Part 1 Video](https://img.youtube.com/vi/VzHrmSlcQf4/maxresdefault.jpg)](https://youtu.be/VzHrmSlcQf4)
+
+📺 **[Watch Part 1 Video](https://youtu.be/VzHrmSlcQf4)** | 📖 **[Read Part 1 Blog](https://medium.com/@george.vetticaden/from-data-graveyard-to-living-intelligence-building-multi-agent-health-systems-with-claudes-d4eb74f60c35)**
+
+Learn how to build a multi-agent health system from scratch, including:
+- Setting up the Health Data Extractor Agent in Claude Desktop
+- Extracting 12+ years of health data with 100% accuracy
+- Understanding the multi-agent architecture and design decisions
+
+### Part 2: Cancelled Cursor & ChatGPT for This
+**Building Multi-Agent Health System with Claude Code**
+
+[![Part 2 Video](https://img.youtube.com/vi/Rx1FWpB7XA8/maxresdefault.jpg)](https://youtu.be/Rx1FWpB7XA8)
+
+📺 **[Watch Part 2 Video](https://youtu.be/Rx1FWpB7XA8)** | 📖 **[Read Part 2 Blog](https://medium.com/@george.vetticaden/claude-code-the-agentic-development-revolution-that-made-me-cancel-cursor-copilot-chatgpt-67508130e2e5)**
+
+Discover why Claude Code revolutionizes agentic development:
+- Building custom MCP servers with Claude Code
+- Creating Snowflake integrations and semantic models
+- Achieving production-ready code in 1-2 attempts
 
 ## Architecture & Technology Stack
 
@@ -20,18 +54,20 @@ The system leverages three core technologies:
 - **Model Context Protocol (MCP)**: Seamless connections between agents and enterprise systems
 - **Snowflake Cortex**: Enterprise-grade analytics with natural language processing
 
-## Problem Statement
+## Why Multi-Agent Architecture?
 
-**Real-world challenge**: Apple Health aggregates comprehensive medical data but provides no analytical capabilities.
+Traditional single-agent approaches fail at complex health data processing because they try to do everything at once. This project embraces **specialized agent collaboration** where each agent excels at one critical task:
 
-**What users need but can't do:**
-- ❌ Track cholesterol trends over time
-- ❌ Identify abnormal lab results quickly  
-- ❌ Correlate medication changes with health outcomes
-- ❌ Generate insights from years of health history
-- ❌ Share meaningful data visualizations with healthcare providers
+1. **Extraction requires perfection** - The Extractor Agent focuses solely on 100% accurate data capture
+2. **Analysis requires intelligence** - The Analyst Agent leverages enterprise tools for complex queries
+3. **Scale requires specialization** - Processing 200+ pages demands optimized context windows
 
-**Our solution**: A multi-agent system that transforms static health exports into interactive, conversational health intelligence.
+This separation of concerns delivers what users desperately need:
+- ✅ Track biomarker trends across decades
+- ✅ Instantly identify abnormal lab results  
+- ✅ Correlate medication changes with health outcomes
+- ✅ Generate insights from 12+ years of health history
+- ✅ Create data-driven visualizations for healthcare providers
 
 ## Multi-Agent Component Architecture
 
@@ -42,7 +78,7 @@ The architecture follows a clear **Extract → Load → Analyze** pipeline, with
 ### (1) Health Data Extraction Agent
 **Role**: Transforms unstructured PDFs into structured JSON with 100% accuracy
 
-The extraction agent doesn't try to analyze or visualize - it just extracts perfectly. This single-purpose design ensures reliability and maintainability.
+**Why it matters**: The extraction agent doesn't try to analyze or visualize - it just extracts perfectly. This laser focus on a single responsibility is what enables the **100% accuracy requirement** to be met consistently across hundreds of pages of complex medical data.
 
 **Capabilities**:
 - Processes 200+ page Apple Health PDF exports
@@ -140,6 +176,8 @@ This comprehensive context foundation transformed development outcomes:
 - **🚀 Complete MCP server generation** from technical specifications
 - **📊 Semantic model creation** directly from business requirements
 - **🗄️ Snowflake DDL generation** following data modeling principles
+- **⏱️ Hours to seconds** - What took hours of manual coding now happens in seconds
+- **🔄 Zero context switching** - Claude Code maintains full project understanding throughout
 
 **Key Artifacts Built with Claude Code:**
 - **Custom MCP Server** ([`tools/health-mcp/`](tools/health-mcp/)) - Complete implementation with dual health tools
@@ -150,18 +188,20 @@ The upfront investment in creating detailed design and requirements pays exponen
 
 ## Sample Analytics & Visualizations
 
-Our system generates comprehensive health insights:
+The system generates comprehensive health insights:
 
 ### Cholesterol Trend Analysis (2013-2025)
 [![Cholesterol Analysis](docs/images/query-analysis-images/query-1-cholesterol-trend-analysis.png)](docs/images/query-analysis-images/query-1-cholesterol-trend-analysis.png)
 
-**Query**: *"What's my cholesterol trend over the past decade?"*
+**Natural Language Query**: *"What's my cholesterol trend over the past decade?"*
 
-**Insights Generated**:
-- 33% decrease in total cholesterol over 12 years
-- Identification of concerning triglyceride spike in 2025
-- Correlation with medication adherence patterns
-- Clear visualization of normal ranges vs. actual values
+**AI-Generated Insights**:
+- 📉 33% decrease in total cholesterol over 12 years
+- ⚠️ Identification of concerning triglyceride spike in 2025
+- 💊 Correlation with medication adherence patterns
+- 📊 Clear visualization of normal ranges vs. actual values
+
+**From static PDF to actionable intelligence in seconds.**
 
 ### Advanced Correlation Analysis
 [![Medication Correlation](docs/images/query-analysis-images/query-2-medication-lab-correlation.png)](docs/images/query-analysis-images/query-2-medication-lab-correlation.png)
@@ -419,98 +459,10 @@ uv run python src/health_mcp.py
     └── technical/                  # Implementation requirements
 ```
 
-## Demo Videos
-
-### Part 1: Building Agents with Claude Desktop
-**Coming Soon**: Complete walkthrough of agent creation, configuration, and health data extraction workflow.
-
-### Part 2: Implementing MCP Tools with Claude Code  
-**Coming Soon**: Technical deep-dive into building custom MCP servers, database integration, and semantic model development.
-
-## Use Cases & Applications
-
-### Personal Health Management
-- Track biomarker trends over years
-- Identify medication effectiveness patterns
-- Prepare data-driven reports for healthcare providers
-- Monitor health goals and lifestyle interventions
-
-### Healthcare Provider Integration
-- Supplement patient visits with comprehensive historical data
-- Identify patterns across multiple provider systems
-- Support clinical decision-making with longitudinal insights
-- Generate automated health summaries
-
-### Research & Analytics
-- Population health trend analysis (anonymized)
-- Medication effectiveness studies
-- Health outcome correlation research
-- Preventive care optimization
-
-## Technical Highlights
-
-### Agent Architecture Innovation
-- **Multi-Agent Specialization**: Each agent optimized for specific tasks (extraction vs. analysis)
-- **Context Window Optimization**: Intelligent data chunking strategies for large document processing
-- **Tool Composition**: Custom MCP tools that extend agent capabilities beyond base models
-
-### Data Engineering Excellence
-- **Unified Health Records Model**: Simplified schema design optimized for natural language queries
-- **Semantic Model Engineering**: Business-friendly data definitions that enable complex query generation
-- **Real-time Analytics Pipeline**: From extraction to visualization in minutes, not hours
-
-### Product Management Vision
-- **User-Centric Design**: Complex technical implementation hidden behind simple natural language interface
-- **Scalable Architecture**: Foundation that supports enterprise deployment and multi-tenant usage
-- **Extensible Framework**: MCP-based tool ecosystem that supports rapid feature development
-
-## Future Roadmap
-
-### Enhanced Analytics Capabilities
-- [ ] Predictive health modeling and risk assessment
-- [ ] Integration with wearable device streams (Apple Watch, etc.)
-- [ ] AI-powered health recommendations and goal setting
-- [ ] Multi-patient family health analysis
-
-### Enterprise Features
-- [ ] Healthcare provider API integrations
-- [ ] HIPAA compliance and audit logging
-- [ ] Multi-tenant support for healthcare organizations
-- [ ] Real-time alerting and monitoring systems
-
-### Platform Extensions
-- [ ] Mobile app for health data capture and insights
-- [ ] Integration with electronic health record (EHR) systems
-- [ ] Support for additional health data formats (FHIR, HL7)
-- [ ] Advanced ML models for pattern recognition
-
-## Contributing
-
-This project serves as a reference implementation for building multi-agent systems. Key areas for contribution:
-
-1. **Additional Health Data Sources**: Expand support beyond Apple Health
-2. **Enhanced Visualizations**: New chart types and interactive features  
-3. **Advanced Analytics**: ML models for predictive health insights
-4. **Tool Ecosystem**: Additional MCP tools for healthcare integrations
-
-## Author
-
-**Product Management Executive & Technical Leader**
-
-*Demonstrating the intersection of technical depth, product vision, and execution capability in AI agent development.*
-
-**Portfolio Highlights**:
-- Multi-agent system architecture and implementation
-- Custom MCP server development for enterprise integrations
-- Natural language interface design for complex data systems
-- Advanced health analytics platform
-
----
-
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-*Transform your health data from a static export into dynamic, actionable intelligence. Experience the future of personal health analytics today.*
+*Transform your health data from a static graveyard into living, actionable intelligence. Built with Claude Code's revolutionary agentic development approach - achieving in hours what traditionally takes weeks.*
