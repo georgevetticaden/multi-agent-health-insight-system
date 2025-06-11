@@ -14,7 +14,7 @@ This project demonstrates the power of modern AI agent architectures by solving 
 Apple Health aggregates years of medical records, lab results, medications, and vitals from multiple healthcare providers into comprehensive PDFs. Yet this treasure trove of personal health data remains frustratingly inaccessible - static, unsearchable, and impossible to analyze. Your health history becomes a 200+ page document that no one reads, including you.
 
 The solution transforms these static Apple Health PDF exports into a **conversational health intelligence system** that achieves:
-- **100% extraction accuracy** - Every data point preserved
+- **High extraction accuracy** - Every data point preserved
 - **Natural language querying** - Ask questions like "What's my cholesterol trend?"
 - **Instant insights** - From hours of manual analysis to seconds of AI-powered intelligence
 - **12+ years of analysis** - Uncover patterns and correlations across your entire health history
@@ -30,7 +30,7 @@ The solution transforms these static Apple Health PDF exports into a **conversat
 
 Learn how to build a multi-agent health system from scratch, including:
 - Setting up the Health Data Extractor Agent in Claude Desktop
-- Extracting 12+ years of health data with 100% accuracy
+- Extracting 12+ years of health data with high accuracy
 - Understanding the multi-agent architecture and design decisions
 
 ### Part 2: Cancelled Cursor & ChatGPT for This
@@ -58,7 +58,7 @@ The system leverages three core technologies:
 
 Traditional single-agent approaches fail at complex health data processing because they try to do everything at once. This project embraces **specialized agent collaboration** where each agent excels at one critical task:
 
-1. **Extraction requires perfection** - The Extractor Agent focuses solely on 100% accurate data capture
+1. **Extraction requires perfection** - The Extractor Agent focuses solely on highly accurate data capture
 2. **Analysis requires intelligence** - The Analyst Agent leverages enterprise tools for complex queries
 3. **Scale requires specialization** - Processing 200+ pages demands optimized context windows
 
@@ -76,9 +76,9 @@ This separation of concerns delivers what users desperately need:
 The architecture follows a clear **Extract → Load → Analyze** pipeline, with each component having one specialized job:
 
 ### (1) Health Data Extraction Agent
-**Role**: Transforms unstructured PDFs into structured JSON with 100% accuracy
+**Role**: Transforms unstructured PDFs into structured JSON with high accuracy
 
-**Why it matters**: The extraction agent doesn't try to analyze or visualize - it just extracts perfectly. This laser focus on a single responsibility is what enables the **100% accuracy requirement** to be met consistently across hundreds of pages of complex medical data.
+**Why it matters**: The extraction agent doesn't try to analyze or visualize - it just extracts data with exceptional precision. This laser focus on a single responsibility is what enables the **high accuracy requirement** to be met consistently across hundreds of pages of complex medical data.
 
 **Capabilities**:
 - Processes 200+ page Apple Health PDF exports
